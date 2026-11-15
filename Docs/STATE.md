@@ -2,10 +2,10 @@
 
 - 更新时间：2026-11-15（提交 8483679 之后）
 - 最后操作的 Agent：Claude Code（Sonnet 5.5）
-- 当前步骤：S14 已通过；已追加"检测范围调试可视化（F1）"，待用户确认观感；S12 已打标签 s12-accepted 并推送
-- 状态：空闲（等待用户确认调试可视化并指示下一步）
+- 当前步骤：S15（换门、换骑士）已通过；已处理用户三项微调，待复验；S14 与调试可视化已通过并已本地提交（5512df2，未推送）
+- 状态：空闲（等待用户复验微调并指示下一步）
 - 编辑器：PIE 已停止；关卡 `/Game/LOKI/Levels/Lvl_S04_Collision` 已保存
-- Git：main 已推送到 GitHub（到提交 1f3bf80），标签 s12-accepted 已推送；**S13、S14 与调试可视化的改动尚未提交**（`Content/LOKI/Cinematics/`、`BP_CutsceneTrigger`、`BP_MessageTrigger`、`Lvl_S04_Collision`、`Lvl_S14_Greybox`、`BP_ThirdPersonCharacter`、日志等；提交需用户批准）
+- Git：main 已推送到 GitHub（到提交 1f3bf80），标签 s12-accepted 已推送；**S15 的改动尚未提交**（`Content/LastWizard/`、`BP_Door_LW`、`Lvl_S14_Greybox`、`Docs/04_ASSET_LICENSES.md`、日志等；提交需用户批准）。S13/S14/调试可视化已提交 5512df2（仅本地，未推送 GitHub）。原文：（`Content/LOKI/Cinematics/`、`BP_CutsceneTrigger`、`BP_MessageTrigger`、`Lvl_S04_Collision`、`Lvl_S14_Greybox`、`BP_ThirdPersonCharacter`、日志等；提交需用户批准）
 - 下一步建议：用户确认调试可视化后进入 S15+（逐项替换写实资产，需用户批准、登记授权）；在此之前先评估把核心系统迁到 C++（需用户批准，单独一步）
 - 待用户决定：
   0. 是否把默认地图改为 `Lvl_S14_Greybox`（目前需手动打开）

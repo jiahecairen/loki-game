@@ -231,3 +231,39 @@
 - 实现中把已废弃的 DrawDebugCone（弧度）换成 DrawDebugConeInDegrees（度），并删除旧节点。
 - Agent PIE 验证：放残影、开关 F1 期间日志无蓝图警告/错误；F1 单按一次 bShowDebug true→false，再按恢复。调试线条/文字的实际画面未验证（需用户肉眼看）。
 - 未包含：NPC 对话范围、门交互范围、镜头/消息触发区的可视化（它们是 Box 组件，可另做）；视野锥是简化的半球锥，未画遮挡（被墙挡住的视线仍会被画在锥内，真实判定会被墙挡）。
+
+### S15 起点：导入 Last Wizard 的门并替换 S14 的"墙门" — 2026-11-15
+- 路线判断：MCP（导入素材、网格/组件替换、关卡摆放、PIE 验证）。用户确认采用推荐方案（先换门）；Git 先提交（5512df2，仅本地、未推送 GitHub）。
+- 导入：MCP 的 `maintain_content migrate` 找不到该 Fab 包目录（fabLibrary 根目录被判为 missing），改为直接把需要的文件复制进工程并保持包内路径：`Content/LastWizard/ModularInterior/Door/**`（门板、门框、两个把手、MI_Door、3 张贴图、BP_Door_Free）、`Content/LastWizard/Base/**`（M_RSG_Lit 等基础材质与贴图）、包内说明文档。共约 13MB；编辑器已识别（asset.list 可见）。只导入"门"，没有导入整包（186MB）。
+- 模型尺寸：门板 214×383×31cm，门框 311×437×37cm，枢轴在地面中心。因关卡墙高 300cm，整体等比 0.68（门板约 146×260，门框约 212×297）。
+- 新增 `BP_Door_LW`（`BP_Door` 的子类，保留 `OpenDoor`/按 E 开门逻辑；DoorMesh 改用 SM_Door_SM_Door，InteractBox 的 BoxExtent=(294,441,147)、相对位置 z=147，按等比缩放后世界半尺寸≈(200,300,100)；新增 HandleFront/HandleBack 把手，跟着门板一起上升）。父类 `BP_Door` 及 S04 测试关卡的旧门未改（已读回父类 BoxExtent/Mesh/Location 不变）。门框不是蓝图一部分（否则会跟着升起），作为独立静态网格 `DoorFrame_01` 放在关卡里。
+- S14 关卡改动：删除旧 `Door_01`（方块门板，我自己创建的），新建 `Door_01`（BP_Door_LW，位置 (200,0,0)，缩放 0.68）、`DoorFrame_01`、两侧补墙 `DoorWall_N/S`（(200,±203,150)，0.5×1.94×3，填满门两侧至通道宽 600）；导航已重建；关卡已保存。
+- Agent PIE 实测：①门关着，玩家 W 前进在 x≈154 被挡；②走到 NPC 旁按 E、按 1：Door_01 位置读回 (200,0,300)（门升起 300cm）；③门开后玩家从 (-100,0) 前进，经 x=-4、326 到 939（通过门洞）。
+- 未验证：门的实际外观（材质、比例、风格是否与灰盒协调）；开门时门板升起的观感；门框与墙的接缝；把手位置；整关其他部分仍是灰盒方块，风格不统一属预期。
+- 授权：已创建 `Docs/04_ASSET_LICENSES.md` 并登记，**许可条款待用户在 Fab 商品页核对**。
+
+### S15：守卫换成 Last Wizard 骑士 — 2026-11-15
+- 路线判断：MCP（导入素材、改网格/动画、PIE 实测）；动画不做动画蓝图，直接在 BP_Guard 里用 SkeletalMeshComponent.PlayAnimation（单节点模式）按状态切换，因为包内只有 4 个动画片段、无动画蓝图，逻辑简单、好验证。
+- 导入：把 `Characters/Knight` 复制到 `Content/LastWizard/Characters/Knight`（保持包内路径；约 46MB，其中贴图 42MB）。已在 `Docs/04_ASSET_LICENSES.md` 追加登记，许可仍待用户核对。
+- BP_Guard 修改：Mesh 改为 SK_Knight、AnimationMode=AnimationSingleNode、初始动画 Idle 循环、缩放 0.65（骑士原高约 272cm，缩到约 177cm 匹配胶囊）；沿用原来的 Z=-90、Yaw=-90（用 foot_l→ball_l 的方向实测：脚尖朝向与守卫前进方向一致，朝向正确）。新增变量 CurAnim（0/1待机/2行走）、bAttackAnim；新增事件 AnimLoop（每 0.1 秒，BeginPlay 的 Sequence 第 4 路启动）：未死亡且不在攻击时，速度>20 播 Walk（循环），否则播 Idle（循环），仅在状态变化时切换。GuardAttack：开始时 bAttackAnim=true、播 Attack（不循环）、PlayRate=2（让 2.17 秒的动画约 1.1 秒播完，匹配 1 秒攻击冷却），冷却结束后 bAttackAnim=false、CurAnim=0、PlayRate=1。死亡流程：把"开启物理模拟（布娃娃）"改为 SetSimulatePhysics(false) + 播 Death（不循环），其余（停止、DisableMovement、胶囊 NoCollision、5 秒后销毁）不变。受击闪光后恢复的材质由人偶的 MI_Quinn 改为骑士的 MI_Knight_Top / MI_Knight（否则闪光后会变成人偶材质）。
+- Agent PIE 实测：①巡逻：CurAnim 在行走(2)与停顿处待机(1)间切换；foot_l 高度在 12–45cm 来回变化（走路动画在播）；②追击贴近玩家：bAttackAnim=true，玩家血量按 34 递减；③被玩家 3 下打倒：bDead=true；约 1.3 秒后头部高度从约 102 降到约 65（死亡动画在播），其后保持；5 秒后守卫销毁（actorDestroyed）。
+- 未验证（需用户肉眼）：骑士的实际外观、比例、材质是否正常；走路动画在 200 速度下是否滑步、追击速度 450 时是否明显滑步（走路动画只有一种速度）；攻击动画与伤害时机是否对得上（伤害在挥击开始瞬间结算）；死亡动画最终姿势；受击闪光后材质是否复原；骑士武器位置。
+- 已知限制：动画切换最多延迟约 0.1 秒；攻击连续出手时攻击动画几乎一直在播；PlayRate 2 倍可能显得急；包内无 Run，追击没有跑步动画；骑士是单独的外观替换，守卫的碰撞胶囊没改。Windows 未验证。
+
+### S15 返工：骑士没换成功 + 调试线闪烁/过于夸张 — 2026-11-15
+- 用户反馈：模型没换成功，还是原模型，且变小、走路变成姿势很奇怪的滑行；侦测范围线一直闪烁，不需要那么夸张，一个扇形就够了。
+- 原因（我上一轮的错误）：我只改了 BP_Guard 的类默认值，但关卡里放置的 Guard_01 实例上保存过"网格=SKM_Quinn_Simple"的覆盖值，类默认值改动不会覆盖实例的覆盖值；缩放和动画模式没有被覆盖所以跟着变了——结果人偶被缩小并套上了骑士的动画，姿势错误。我上一轮的"骨骼名/脚踝高度"测试读到的是人偶骨骼（spine_05、weapon_r_muzzle 等），当时没有核对 SkeletalMeshAsset，结论不可靠，已作废。
+- 修复：用 inspect.set_component_property 直接把 Lvl_S14_Greybox 里 Guard_01 的 CharacterMesh0.SkeletalMeshAsset 改为 SK_Knight（材质读回为 MI_Knight_Top/MI_Knight/MI_Knight_Weapon）；BP_Guard 的 Mesh.AnimClass 清空（单节点动画不需要 ABP_Unarmed）；关卡已保存。
+- 调试线：BP_Guard 只保留"贴地的扇形"（DrawDebugConeInDegrees，AngleHeight=1° 使其很扁；半角 90°、长 1200，起点降到脚下 80cm，线宽 1）和头顶状态文字；删除了 3 米球、攻击圈球、到玩家的连线及其节点。BP_Decoy 的吸引范围由球改为贴地的紫色圆圈（DrawDebugCircle）。线条/文字存活时间由 0.05–0.06 秒改为 0.15 秒（循环间隔 0.05 秒），消除闪烁（原因：存活时间比刷新间隔短）。
+- 这次实测（以运行中实例为准）：Guard_01.Mesh.SkeletalMeshAsset=SK_Knight、AnimationMode=AnimationSingleNode、AnimClass=None；骨骼列表为骑士的（spine_01…04、neck、socket_l/r、weapon_base、chain_01…03、weapon_head）；巡逻中 CurAnim 在 2（行走）/1（待机）间切换；左右肩位置与朝向一致（朝 -X 时左肩在 +Y）。
+- 仍未验证（需用户肉眼）：骑士外观与动画观感、扇形的实际画面、闪烁是否消失、攻击/死亡动画。
+- 遗留：S04 测试关卡（Lvl_S04_Collision）里的 Guard_01 实例也保存过人偶网格覆盖，但套用了骑士动画，可能显示不对；该关卡是旧测试关，未处理，需要时再修。
+
+### S15 微调：扇形缩小、守卫降速与脚步匹配、开场镜头空格跳过 — 2026-11-15
+- 用户反馈：S15 通过；脚下扇形太大；守卫移动太快、与脚下步伐不自然；开场摄像机对门的动画希望可以空格跳过。
+- 路线判断：蓝图（参数与少量节点）。
+- 扇形：PawnSensing.SightRadius 由 1200 缩到 800（真实视距同步缩小，降低潜行难度）；BP_Guard 调试扇形的长度改为直接读 PawnSensing.SightRadius，扇形与真实判定始终一致。注意：视距改小是玩法改动，如觉得 800 太近可在 BP_Guard 的 PawnSensing 组件里调。
+- 速度：守卫巡逻/默认 200→120，被残影吸引 300→200，追击 450→300（共 4 处节点默认值 + 蓝图类默认 MaxWalkSpeed=120，已读回）。行走动画的播放速率每 0.1 秒按"当前速度 / WalkRefSpeed"调整（新增公开变量 WalkRefSpeed=120，对应播放速率 1.0；觉得脚步还滑可调这个值，数值越小动画越快）。
+- 开场镜头跳过：BP_CutsceneTrigger 新增变量 SeqPlayer、bPlaying；镜头开始后给触发器开启输入，屏幕提示"Press SPACE to skip"；按空格 → 停止序列 → 走与"自然播完"同一条结束流程（无敌解除、取消 CinematicMode、SetViewTargetWithBlend 回玩家 0.3 秒、关闭触发器输入）。发现并修复副作用：镜头期间按空格会让角色跳起（跳跃输入没被 CinematicMode 屏蔽），现改为镜头期间 DisableInput 玩家角色本身（同时也屏蔽了镜头期间的 Q/E/左键），结束后 EnableInput 恢复。
+- Agent PIE 实测：①守卫巡逻速度读回 120、SightRadius 读回 800、CurAnim=2；②镜头 t=1 秒按空格：bInvulnerable 立刻变 false、角色未跳起（z 保持 92）、ViewTarget 回到玩家角色；随后 W 正常前进、再按空格能跳起（z 升至 205）——输入已恢复。
+- 未验证：脚步与速度是否看着自然（WalkRefSpeed=120 是估计值，需用户肉眼调）；追击速度 300 时走路动画被加速到约 2.5 倍是否难看；扇形缩小后的画面；镜头跳过的观感；Windows。
