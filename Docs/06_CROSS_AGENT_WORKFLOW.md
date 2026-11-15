@@ -49,15 +49,6 @@
 - `codex` 分支目前与 `main` 相同，不再使用；未经用户同意不要删除，也不要让它落后后再切过去干活。
 - 开工前：`git branch --show-current` 必须是 `main`（或用户指定的临时分支）。
 
-## H. 换手话术（用户复制粘贴即可）
-**换成 Codex：**
-> 接手 LOKI 项目。先读 AGENTS.md，运行 `bash Tools/session_start.sh`，再读 Docs/STATE.md 和 Docs/06_CROSS_AGENT_WORKFLOW.md。向我汇报当前步骤、未提交的改动、你的路线判断（C++/MCP），然后等我说"继续"再动手。
-
-**换成 Claude Code：**
-> 接手 LOKI 项目。读 CLAUDE.md、Docs/STATE.md、Docs/06_CROSS_AGENT_WORKFLOW.md（开工脚本已自动运行，请看输出）。向我汇报当前步骤、未提交的改动、你的路线判断（C++/MCP），然后等我说"继续"再动手。
-
-**如果上一个 Agent 是做到一半额度用完的**，在话术后追加：
-> 上一个 Agent 可能在做到一半时中断。请先用 git diff 和编辑器实际状态核对，告诉我哪些改动是完整的、哪些要回退，再决定怎么继续。
-
-**如果上一个 Agent 还有一点额度，换手前先让它收尾：**
-> 现在收尾：停止 PIE、保存、更新日志和 Docs/STATE.md，提交前先给我看改动清单。
+## H. 换手话术
+**用户只需说一句：「现在由你接手」。** 任何 Agent 听到后，按 `CLAUDE.md` / `AGENTS.md` 里"接手触发词"一节自动执行：跑开工脚本 → 读 STATE/交接文档 → 核对 Git 与编辑器 → 若上一位中断则核对改动 → 汇报 → 停下等用户指令。流程细节见本文件 B 节。
+（上一个 Agent 还有一点额度时，可先对它说"现在收尾"：停 PIE、保存、更新日志和 `Docs/STATE.md`，提交前给用户看改动清单。）

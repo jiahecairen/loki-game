@@ -13,3 +13,11 @@
 **当前状态：** 以 `Docs/STATE.md` 为准（不要依赖本文件里的进度）。
 
 **多 Agent 协作（必须遵守）：** 新会话先运行 `bash Tools/session_start.sh` 并读 `Docs/STATE.md`、`Docs/06_CROSS_AGENT_WORKFLOW.md`；同一时刻只让一个 Agent 动编辑器/资产；每个小步骤结束要更新 `01_DEV_LOG.md`、`02_ACCEPTANCE_LOG.md` 并**覆盖更新 `Docs/STATE.md`**；每步开始前先判断实现路线（C++ / MCP / 混合）并写出理由，规则见 `Docs/06_CROSS_AGENT_WORKFLOW.md` 第 D 节，优先级：质量 > 速度 > token。
+
+## 接手触发词："现在由你接手"
+用户说"现在由你接手"（或"你接手"）= 你是接班 Agent，**立刻自动完成以下全部动作，不需要用户再补充任何话**：
+1. 运行 `bash Tools/session_start.sh`（Claude Code 开会话时已自动运行，看输出即可）。
+2. 读 `Docs/STATE.md`、`Docs/05_HANDOFF.md`、`Docs/06_CROSS_AGENT_WORKFLOW.md`。
+3. 核对：当前 Git 分支是否为 `main`；`git status`/`git diff` 与 STATE 是否一致；编辑器/PIE 状态。若 STATE 为"进行中"，或有 STATE 没记录的未提交改动，视为上一位 Agent 中断：核对改动，说明哪些完整、哪些建议回退。
+4. 用简短固定格式汇报：当前步骤与状态 / 未提交改动 / 待用户决定的事 / 建议的下一步及路线判断（C++ / MCP / 混合 + 理由）。
+5. 然后**停下**，等用户明确说"继续 Sxx"或其他指令才动手；不要自行开始下一步，不要自行提交或推送 Git。
