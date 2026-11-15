@@ -55,6 +55,11 @@
   10. `MoveToLocation/MoveToActor` 不是延迟节点；`MoveToLocation` 的 `bProject...` 默认不吸附导航网格。
 - `ABP_Unarmed` 的 ShouldMove 依赖 `GetCurrentAcceleration`，AI 角色必须 `bUseAccelerationForPaths`。
 
+11. **中文编辑器下 `write_graph_from_code` 的坑**（2026-11-15）：`(if ...)`、`(not ...)` 等简写会被译成英文节点名（Utilities|FlowControl|Branch）而失败；事件名要用已存在的节点（BeginPlay 需先用 edit_graph create_node Event ReceiveBeginPlay 建出来）；组件变量 getter 是 `变量|默认|获取HealthComp`。绑定 C++ 委托用 edit_graph `nodeType: BindEvent`（会自动建好签名正确的自定义事件）。复杂改线用 edit_graph batch（先 dryRun）。
+13. **改 C++ 头文件后要接蓝图，先重启编辑器**：热重载后新旧类并存，蓝图连线会报"X 与 X 不兼容"。流程：用户关编辑器 → `Build.sh` → 重开。只改函数体可继续用 `Module Recompile LOKI`。
+14. **PIE 里 F1 = UE 自带线框模式**（F3 恢复），和本项目 F1 调试开关同时触发。
+12. **Claude 桌面 App 会把会话开在 `.claude/worktrees/` 里**：编辑器用的是主目录 `/Users/rain/DevGame/Loki`，所有改动要落在主目录 main 上（用户已批准）。
+
 ## 5. 已知问题 / 技术债（未处理，已知）
 - 编译提示：`BP_Guard` 的 `DecoyAttract` 在 Delay 后读 `bChasing`（可能被后续运行覆盖）。冷却 8 秒内不会触发，暂不影响。
 - 对话/选项界面是 PrintString，临时方案；S13 前后需要 UMG（用户之前希望做按钮）。
@@ -78,6 +83,9 @@
 
 ## 7. 路线图（总设计 §8）
 S12 玩家死亡/失败后的检查点重试 → S13 短 Sequencer 实时镜头并返回控制 → S14 串成 2–3 分钟灰盒流程 → S15+ 逐项替换写实资产（需用户批准，登记授权）。
+
+## 7.5 C++ 系统（正式玩法代码）
+- `ULokiHealthComponent`（C1，`Source/LOKI/LokiHealthComponent.*`）：玩家 `BP_ThirdPersonCharacter.HealthComp` 已使用。自动接收 ApplyDamage；`bInvulnerable` 由开场镜头 `BP_CutsceneTrigger` 设置；蓝图通过 OnHealthChanged / OnDeath 做提示与重载。守卫 BP_Guard 仍用自己的 Health 变量（C2 再迁），但攻击前用 `IsActorDead` 检查目标。`SetDebugDisplay` 由 F1 调试开关驱动，显示 HP 与无敌状态。守卫 CharacterMesh0 对 Camera 通道 Ignore（防闪黑）。
 
 ## 8. C++ 迭代链路（2026-11-15 实测，Mac）
 - 改 `Source/LOKI/*.cpp/.h` 后，在编辑器里执行控制台命令 `Module Recompile LOKI`（可用 MCP `system_control.console_command`），约 8–10 秒热重载，**不用退出编辑器**；Mac 没有 Live Coding。

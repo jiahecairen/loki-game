@@ -9,3 +9,5 @@
 - 工程为纯 Blueprint 模板（TP_ThirdPersonBP），暂无 C++ 模块，无双编译器风险。
 - 工程路径与资产名使用英文与数字。
 - Windows 打包、运行均未验证；需要真实 Windows 环境单独测试。
+
+- 2026-11-15（C1）：LOKI 模块开始有正式 C++ 玩法代码（`ULokiHealthComponent`）。Windows 需 VS 2022 工具链编译 LOKI 模块；代码只用引擎标准 API（OnTakeAnyDamage 动态委托、FMath），无平台相关代码。未在 Windows 编译验证。

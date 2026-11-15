@@ -275,3 +275,21 @@
 - 原灰盒 11 个方块（Floor、Wall_Outer_N/S/W/E、Corridor_N/S、Block_1/2、DoorWall_N/S）仅把 StaticMeshComponent0.bVisible 设为 false，**碰撞保留**，所以导航/阻挡与原来完全一致。重建导航并保存关卡。
 - Agent PIE 实测：守卫巡逻 x 785↔1339 来回、速度 120、z=90.2，导航正常；玩家按 D 4.5 秒在 y=589.9 被北侧墙挡住（与换前同一位置）。
 - 未验证（需用户肉眼）：墙面/地板外观与接缝、墙面是否有缝隙或穿帮、门附近墙的衔接、光照下是否过暗；Last Wizard 许可仍待核对。
+
+### C1 ULokiHealthComponent（C++ 血量/受伤/死亡）— 2026-11-15（Claude Code，Opus 5.5）
+- 路线判断：混合。血量是多处复用的系统逻辑 → C++（规则 D-2）；挂组件、改蓝图连线、PIE 验证 → MCP。
+- 新增 C++：`Source/LOKI/LokiHealthComponent.h/.cpp`（UActorComponent，显示名 "Loki Health"）。属性 MaxHealth(100)、bInvulnerable、bIgnoreSelfDamage(true)；事件 OnHealthChanged(NewHealth, Delta, DamageCauser)、OnDeath(Killer)；函数 GetHealth、GetHealthPercent、IsDead、ApplyHealthDamage、Heal、ResetHealth。BeginPlay 时自动绑定拥有者的 OnTakeAnyDamage，所以守卫原有的 ApplyDamage 不用改。编辑器内 `Module Recompile LOKI` 编译通过（UBT Result: Succeeded，新文件 0 警告），热加载成功。
+- BP_ThirdPersonCharacter：新增组件 HealthComp；BeginPlay 绑定 OnHealthChanged → 自定义事件 OnPlayerHealthChanged（屏幕显示 "Player HP: x"，Key=PlayerHP，与原来相同）；OnDeath → OnPlayerDeath（DisableInput → 提示 "You were caught - restarting in 2s..." → Delay 2 → 重载当前关卡，与原来相同）。删除旧的 Event AnyDamage 整条链（24 个节点）和变量 Health、bPlayerDead、bInvulnerable。lint 0 条。
+- BP_CutsceneTrigger：镜头开始/结束时原来设置角色的 bInvulnerable，改为设置 `HealthComp.bInvulnerable`（true/false），其余不变。lint 只有 1 条原有提示（SeqPlayer 跳过路径未判空，非本步引入）。
+- 唯一有意的行为差异：血量最低限制为 0（原来会显示 -2）。
+- Agent PIE 对比（Lvl_S14_Greybox，玩家传送到守卫前方 870,0）：迁移前 Health 100→66→32→-2，bPlayerDead=true，4.2 秒 levelChanged；迁移后 100→66→32→0，bDead=true，4.2 秒 levelChanged（时间点一致）。重载后 Health=100、bDead=false。左键攻击后 Health 仍 100（不自伤，但未单独证明攻击确实发出）。走进开场镜头触发器：bInvulnerable 立刻 true，镜头中按空格跳过后变 false。
+- 未验证：肉眼观感（应与之前完全一样）；热重载后若出现异常需重启编辑器复测；Windows 编译。
+- 过程备注：本会话开在 Claude 的 worktree 里，用户批准用命令行直接改主目录 main 的文件。EngineWire 的 write_graph_from_code 在中文编辑器下 `(if ...)`、`(not ...)` 会被译成英文节点名而失败，复杂改动改用 edit_graph batch。
+
+### C1 返工：闪黑、"4 下才死"、无敌可见 — 2026-11-15（Claude Code，Opus 5.5）
+- 用户反馈：①每次被击中画面闪黑；②被攻击 4 次才死；③开场镜头无敌无法判断（守卫太远）。
+- ①原因（S15 换骑士后就有，非 C1 引入）：骑士网格用 CharacterMesh 碰撞预设，会挡 Camera 通道；守卫挥剑时弹簧臂把镜头拉到玩家身体里 1 帧。PIE 逐帧采样证据：镜头 x 从 429 跳到 829（玩家位置）。修复：BP_Guard 的 CharacterMesh0 碰撞响应 Camera=Ignore（只影响镜头，不影响攻击/布娃娃）。复测：4.4 秒共 266 帧，镜头位置恒定 470（min=max）。
+- ②原因：日志显示实际第 3 下就死（66→32→0），但死后 2 秒等待中守卫还会再挥一刀（S12 起就有）。修复：C++ 新增 `ULokiHealthComponent::IsActorDead(Actor)`（静态、蓝图可用）；BP_Guard 的 GuardAttack 开头加 Branch：目标已死则不攻击。复测：日志只有 3 次 "Guard attacks!"，死后无攻击。
+- ③新增调试显示：组件 `SetDebugDisplay(bool)`，开启时每帧屏幕显示 "[角色名] HP x/100 | Invulnerable: YES/NO"（无敌黄字，否则绿字；只在开启时 Tick）。BP_ThirdPersonCharacter：F1 切换 bShowDebug 后同步调用；BeginPlay 按 GameInstance.bShowDebug 同步（重载后保持）。复测：F1 后 IsComponentTickEnabled=true；走进开场镜头 bInvulnerable=true。截图工具抓不到屏幕调试文字，文字外观需用户肉眼确认。
+- 热重载问题：第二次改头文件后蓝图连线报"Loki Health 与 Loki Health 不兼容"（新旧类并存）。处理：用户关闭编辑器 → 命令行 Build.sh 编译（Succeeded）→ 重开编辑器 → 再接线成功。结论：改 C++ 头文件（新增函数/成员）后需要接蓝图时，先重启编辑器。
+- 发现：PIE 里按 F1 同时会触发 UE 自带的"线框模式"（F1 线框 / F3 恢复光照），这是编辑器调试快捷键，打包后的游戏不会有。S14 选了 F1 做调试开关，暂未改键。
