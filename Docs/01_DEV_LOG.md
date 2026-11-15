@@ -202,3 +202,32 @@
 - 注意：MCP 的 `system_control.run_build kind=ubt` 把工程路径拼成相对路径，会报 "Unable to find project file"，目前不可用，需用命令行或 `Module Recompile`。`create_cpp_class` 不能用子文件夹（模块没有 Public/Private）。构建时 UBT 会清理 EngineWire 的 UnrealEditor.modules 并重新生成，实测文件仍在。
 - 未验证：①新增/修改头文件（改 UPROPERTY、类布局）在已有蓝图实例上的热重载稳定性（Hot Reload 对布局变化可能要重启编辑器）；②Windows（Live Coding 在 Windows 可用，需到 Windows 实测）；③从蓝图迁移到 C++ 的实际 token 节省（本次未做迁移，仅测编译链路）。
 - 结论：Mac 上"改 C++ → 控制台 Module Recompile → 立刻在编辑器里生效"可行，日常约 8–10 秒，不必退出编辑器；教程所说"必须退出重编译"在本机不成立，但"没有 Live Coding"成立。
+
+### S13 短 Sequencer 实时镜头并返回控制 — 2026-11-15
+- 路线判断：MCP（Sequencer 资产、摄像机、关卡触发器都是编辑器内容）+ 小型蓝图触发逻辑。
+- 新增资产：`/Game/LOKI/Cinematics/SEQ_S13_Intro`（Level Sequence，24fps，120 帧=5 秒；CineCameraActor `CineCam_S13` 作为可拥有绑定；Transform 关键帧：第 0 帧 (-700,-350,300)→第 119 帧 (-250,-250,230)，全程 lookAt 门 (450,0,150)，线性；一条 Camera Cut 轨道指向该摄像机）。`/Game/LOKI/Gameplay/BP_CutsceneTrigger`（Actor，根 BoxComponent TriggerBox 150×150×100；变量 bPlayed）。
+- BP_CutsceneTrigger 逻辑：玩家（BP_ThirdPersonCharacter）首次进入 → bPlayed=true → 玩家 bInvulnerable=true → PlayerController.SetCinematicMode(true, 影响移动与转向) → CreateLevelSequencePlayer(SEQ_S13_Intro) → 绑定 OnFinished → Play；序列结束 → 玩家 bInvulnerable=false → SetCinematicMode(false)，序列播放器自动把视角还给玩家。只触发一次。
+- BP_ThirdPersonCharacter 修改（仅新增）：变量 bInvulnerable；AnyDamage 的忽略条件由"伤害来源是自己"改为"来源是自己 OR bInvulnerable"（镜头期间守卫打不到玩家）。
+- 关卡：`Lvl_S04_Collision` 新增 `CineCam_S13`、`CutsceneTrigger_01`（-600,300,100）；已保存。
+- Agent PIE 实测（守卫被传送到远处）：玩家被传送进触发范围后，约 5 秒内 bInvulnerable=true，按住 W 位置不变；约 5 秒时 bInvulnerable=false；之后 W 正常移动（速度 600）。镜头期间 PlayerCameraManager.ViewTarget.Target = CineCameraActor_0，POV 位置约 (-670,-343,295)、Pitch -7、Yaw 17，与第一帧一致。
+- 测试中发现并修复：第一次测试镜头期间守卫贴身把玩家打死触发重载（S12 引入的失败规则与锁操作冲突），因此加了镜头期间无敌。镜头结束后若守卫在旁边，玩家仍会正常受伤。
+- 已知限制：镜头只有一个静态的推镜，没有对话/角色动作/音效；镜头期间守卫、NPC 仍在正常行动（没有暂停世界）；触发只一次，死亡重载后关卡重置会再次触发；镜头画面观感（构图、速度）未验证；Windows 未验证。
+- 未验证：镜头画面是否好看（需用户肉眼）；序列结束时从镜头切回玩家视角是否平滑（数据上 ViewTarget 切换由序列播放器自动完成，未单独读取结束后的 ViewTarget）。
+
+### S14 把已通过元素串成灰盒完整流程 — 2026-11-15
+- 路线判断：MCP（摆关卡/复用蓝图/Sequencer/导航/PIE 验证）+ 两个很小的新蓝图。
+- 新增关卡 `/Game/LOKI/Levels/Lvl_S14_Greybox`（独立新关卡，不改 S04 测试关卡；默认地图仍未改，需手动打开）。线性路线（沿 +X）：牢房（x -1225…200，PlayerStart(-1000,0)，NPC_01(-500,-350)，Hint_Start，Cutscene_Intro 触发区(-650,0)，CineCam_S14）→ Door_01(200,0)（宽 600，缩放 0.2×6×3）→ 守卫通道（x 200…2200，宽 600，两侧墙 Corridor_N/S；Block_1(900,-175)、Block_2(1500,175) 交错挡块，中线 y∈(-50,50) 可直通，也可 S 形绕行；Guard_01 起点(700,0)，PatrolOffset=(1200,0,0) 沿通道巡逻）→ 出口房（x 2200…3200，Goal_Exit 触发区(2800,0)，缩放 1×4×1）。地板/墙均为 Cube 灰盒，NavBounds_S14 覆盖全区，导航已重建，已保存。
+- 新增资产：`BP_MessageTrigger`（进入后一次性屏幕提示；公开变量 Message、bShowTime（附带本局时间秒数）、Duration、bShowOnBeginPlay（开局 1 秒后自动显示，因玩家出生即在触发盒内不会产生"进入"事件））；`SEQ_S14_Intro`（5 秒推镜，CineCam_S14 从牢房左下推近看门）。`BP_CutsceneTrigger` 增加公开变量 `Sequence`（默认仍为 S13 的序列，S14 实例指向 SEQ_S14_Intro）。
+- 流程（预期时长，真人 2–3 分钟取决于潜行/战斗选择）：出生→开局提示→走进触发区播 5 秒镜头→找 NPC 按 E 提问→按 1 开门/按 2 或 E 自己开门→进守卫通道（潜行/Q 残影隐身/左键战斗/背刺）→到出口出现"DEMO COMPLETE! | Time(s): xx"。失败（血量归零）→2 秒后整关重载（剧情标记保留）。
+- Agent PIE 实测（分段，Agent 自测）：①开场镜头：进入触发区 bInvulnerable=true、约 5 秒内移动被锁，之后恢复；②NPC：走进对话范围按 E、按 1 → StoryFlag_AcceptedHelp=true，Door_01 升到 z=450（门开）；③隐身通道：Q 后冲刺 bCloaked=true（脚本直线走时被站在中线的守卫身体挡住，隐身 4 秒结束后被守卫打到 -2 → 整关重载，符合失败规则）；④出口：玩家到 x≈3165，Goal_Exit.bFired=true；⑤开场提示：Hint_Start.bFired=true（修复前为 false）。
+- 未在一次连续脚本中完整通关：通道里守卫挡中线、脚本无法精确控制横向，故通道段与出口段分开验证；真人可绕守卫或用战斗/背刺通过——该部分的真实通过性与体验需用户亲自试玩确认。
+- 已知限制：通道仅 600 宽，守卫巡逻线与最短路线重合，玩家需绕开/残影/战斗；没有"同伴协作""熔岩出口"（总设计 Demo 路径中的同伴和熔岩尚未实现，S14 只串联已通过元素）；没有中途检查点（死亡整关重载）；镜头/提示/对白都是临时屏幕文字；全灰盒；Windows 未验证；整套未经真人完整试玩。
+
+### S14 补充：检测范围调试可视化（F1 开关）— 2026-11-15
+- 用户提议：给敌人视野和替身吸引范围加可见的检测范围，便于验收。路线：蓝图（DrawDebug 节点，发布版自动不绘制）。
+- BP_LokiGameInstance：新增公开变量 `bShowDebug`（默认 true）。BP_ThirdPersonCharacter：F1 键切换 bShowDebug 并屏幕提示"Debug draw (F1): true/false"。
+- BP_Guard：新增 `DebugLoop`（BeginPlay 的 Sequence 第 3 路启动，每 0.05 秒循环）：若 bShowDebug 则绘制 ①黄色视野锥（DrawDebugConeInDegrees，长度 1200=SightRadius，半角 90°=PeripheralVisionAngle，常量与 PawnSensing 当前设置一致，改感知参数时需同步改这里）②青色球 = ProximityRadius（300cm 近距离感知圈）③红色球 160cm = 守卫攻击范围 ④头顶状态文字：绿 PATROL / 红 CHASE / 蓝 DISTRACTED ⑤玩家距离<1200cm 时从守卫到玩家的白色连线。
+- BP_Decoy：新增 Tick 绘制：紫色球 = AttractRadius（1500cm 吸引范围）+ 文字 "DECOY (attracts guards in magenta radius)"。
+- 实现中把已废弃的 DrawDebugCone（弧度）换成 DrawDebugConeInDegrees（度），并删除旧节点。
+- Agent PIE 验证：放残影、开关 F1 期间日志无蓝图警告/错误；F1 单按一次 bShowDebug true→false，再按恢复。调试线条/文字的实际画面未验证（需用户肉眼看）。
+- 未包含：NPC 对话范围、门交互范围、镜头/消息触发区的可视化（它们是 Box 组件，可另做）；视野锥是简化的半球锥，未画遮挡（被墙挡住的视线仍会被画在锥内，真实判定会被墙挡）。
