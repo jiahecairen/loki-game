@@ -267,3 +267,11 @@
 - 开场镜头跳过：BP_CutsceneTrigger 新增变量 SeqPlayer、bPlaying；镜头开始后给触发器开启输入，屏幕提示"Press SPACE to skip"；按空格 → 停止序列 → 走与"自然播完"同一条结束流程（无敌解除、取消 CinematicMode、SetViewTargetWithBlend 回玩家 0.3 秒、关闭触发器输入）。发现并修复副作用：镜头期间按空格会让角色跳起（跳跃输入没被 CinematicMode 屏蔽），现改为镜头期间 DisableInput 玩家角色本身（同时也屏蔽了镜头期间的 Q/E/左键），结束后 EnableInput 恢复。
 - Agent PIE 实测：①守卫巡逻速度读回 120、SightRadius 读回 800、CurAnim=2；②镜头 t=1 秒按空格：bInvulnerable 立刻变 false、角色未跳起（z 保持 92）、ViewTarget 回到玩家角色；随后 W 正常前进、再按空格能跳起（z 升至 205）——输入已恢复。
 - 未验证：脚步与速度是否看着自然（WalkRefSpeed=120 是估计值，需用户肉眼调）；追击速度 300 时走路动画被加速到约 2.5 倍是否难看；扇形缩小后的画面；镜头跳过的观感；Windows。
+
+### S15 换墙地板：Last Wizard 模块替换灰盒 — 2026-11-15
+- 路线判断：MCP（摆放/材质/导航/关卡内容，C++ 做不到）。
+- 导入：把 Floor、Wall 两个目录从 Fab 缓存复制到 `Content/LastWizard/ModularInterior/`（路径保持原样）；`MI_Wall_Bricks_Plain`、`MI_Floor_Rocks_A` 设 two_sided=true（素材是单面平面）。
+- 关卡 `Lvl_S14_Greybox`：新增共 97 个 `LW_*` 静态网格（tag LW_Visual，文件夹 LW_Visuals）：LW_Floor×27（500cm 块，z=0.5）、外墙/走廊/房间/挡块/门墙立面共 70 块（统一缩放 0.6=300cm 高）。全部 `NoCollision`。
+- 原灰盒 11 个方块（Floor、Wall_Outer_N/S/W/E、Corridor_N/S、Block_1/2、DoorWall_N/S）仅把 StaticMeshComponent0.bVisible 设为 false，**碰撞保留**，所以导航/阻挡与原来完全一致。重建导航并保存关卡。
+- Agent PIE 实测：守卫巡逻 x 785↔1339 来回、速度 120、z=90.2，导航正常；玩家按 D 4.5 秒在 y=589.9 被北侧墙挡住（与换前同一位置）。
+- 未验证（需用户肉眼）：墙面/地板外观与接缝、墙面是否有缝隙或穿帮、门附近墙的衔接、光照下是否过暗；Last Wizard 许可仍待核对。

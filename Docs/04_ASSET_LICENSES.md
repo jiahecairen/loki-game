@@ -7,6 +7,7 @@
 | Last Wizard FREE – Stylized Castle Room with Rigged Knight and Fireplace（仅导入"门"相关部分） | Fab 免费 listing（用户账号领取；本机缓存目录 `/Users/Shared/UnrealEngine/Launcher/VaultCache/LastWiza…`，包内文档称支持 UE 5.8） | 2026-11-15 | `/Game/LastWizard/ModularInterior/Door/**`、`/Game/LastWizard/Base/**`（M_RSG_Lit、M_RSG_ParticleSprite、M_LastWizard_Free_OverviewGround、T_RSG_Default_*）、`/Game/LastWizard/LastWizard_Free_Documentation.md` | S15：替换 S14 关卡的门（`BP_Door_LW` 使用 `SM_Door_SM_Door` + 把手；`DoorFrame_01` 使用 `SM_Door_SM_DoorFrame`） | **待核对**（须用户在 Fab 商品页确认许可类型与条款；包内文档未写许可） | **待核对** | 仅导入约 13MB；其余（城堡房间构件、骑士、火把、桌子等）尚未导入，仍在 Fab 缓存中；整包约 186MB。 |
 
 | Last Wizard FREE（骑士部分，同一素材包） | 同上 | 2026-11-15 | `/Game/LastWizard/Characters/Knight/**`（SK_Knight、SKEL_Knight、PHYS_Knight、4 个动画 A_Knight_Idle/Walk/Attack/Death、3 个材质、9 张贴图，约 46MB） | S15：替换守卫 `BP_Guard` 的外观与动画 | **待核对**（同上） | **待核对** | 骨架为包内自带自定义骨架（骨骼命名类似 UE5 Mannequin），无 Run/Jump。 |
+| Last Wizard FREE（地板与墙，同一素材包） | 同上（许可仍待用户在 Fab 页面核对） | 2026-11-15 | `/Game/LastWizard/ModularInterior/Floor/**`（SM_Floor、MI_Floor_Rocks_A 及贴图）、`/Game/LastWizard/ModularInterior/Wall/**`（SM_Wall_Bricks、MI_Wall_Bricks_Plain 等）；两个材质实例已设 two_sided 覆盖 | 关卡 Lvl_S14_Greybox：70 块墙面 + 27 块地板仅作视觉（无碰撞），原灰盒方块隐藏但保留碰撞 |
 
 ## 备注
 - 本机 Fab 缓存里还看到另外几个 listing：`Electric_Dreams_Env`、`Game_Animation_Sample`、`Valley_of_the_Ancient`（均未导入，只是缓存目录名）。使用前同样需要用户确认来源与许可，并在此登记。

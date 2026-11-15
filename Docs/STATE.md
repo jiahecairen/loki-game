@@ -1,16 +1,19 @@
 # 当前状态（每个小步骤结束时由主笔 Agent 覆盖更新）
 
-- 更新时间：2026-11-15（提交 8483679 之后）
+- 更新时间：2026-11-15（提交 c957179 之后）
 - 最后操作的 Agent：Claude Code（Sonnet 5.5）
-- 当前步骤：S15（换门、换骑士）已通过；已处理用户三项微调，待复验；S14 与调试可视化已通过并已本地提交（5512df2，未推送）
-- 状态：空闲（等待用户复验微调并指示下一步）
-- 编辑器：PIE 已停止；关卡 `/Game/LOKI/Levels/Lvl_S04_Collision` 已保存
-- Git：main 已推送到 GitHub（到提交 1f3bf80），标签 s12-accepted 已推送；**S15 的改动尚未提交**（`Content/LastWizard/`、`BP_Door_LW`、`Lvl_S14_Greybox`、`Docs/04_ASSET_LICENSES.md`、日志等；提交需用户批准）。S13/S14/调试可视化已提交 5512df2（仅本地，未推送 GitHub）。原文：（`Content/LOKI/Cinematics/`、`BP_CutsceneTrigger`、`BP_MessageTrigger`、`Lvl_S04_Collision`、`Lvl_S14_Greybox`、`BP_ThirdPersonCharacter`、日志等；提交需用户批准）
-- 下一步建议：用户确认调试可视化后进入 S15+（逐项替换写实资产，需用户批准、登记授权）；在此之前先评估把核心系统迁到 C++（需用户批准，单独一步）
+- 当前步骤：S15 换墙地板（Last Wizard 模块替换灰盒）已完成，待用户肉眼验收；S15 骑士微调（扇形/速度/空格跳过）也待复验
+- 状态：空闲（等待用户验收）
+- 编辑器：PIE 已停止；关卡 `/Game/LOKI/Levels/Lvl_S14_Greybox` 已保存
+- Git：main 本地提交到 c957179（S15 门+骑士）；origin/main 在 1f3bf80。**换墙地板改动尚未提交**（`Content/LastWizard/ModularInterior/Floor|Wall`、`Lvl_S14_Greybox`、日志、授权表）。`Content/Fab/`、`Content/Iceland_Environment/` 是用户自己的素材，一直未跟踪，不要提交。
+- 用户反馈（墙地板）：终点处通道两面墙的两侧露出一块贴图（墙块比走廊略长）。用户决定：测试场景只用于做功能，不再打磨，暂不修。
+- 用户决定（2026-11-15）：先做 C++ 功能部分，再做室外开场环境。
+- 下一步：**C 1 = `ULokiHealthComponent`（C++ 血量/受伤/死亡事件）**，先接到玩家 `BP_ThirdPersonCharacter`，替换其 Health 变量与 AnyDamage 逻辑，行为不变，迁移前后各做一次 PIE 对比。建议 Opus 5.5。开工前待用户决定是否先提交换墙地板作回退点。
+- 后续拆分：C 2 = 守卫 AI 迁到 `ALokiGuardBase`（BP_Guard 变子类，只留骑士网格与动画引用）；C 3 = 检查点/失败重试。
+- 再之后：室外开场 `Lvl_S16_Cliff`（主角被绑在断崖石头上；"被绑"的剧情与动作未定，只做占位，不编剧情）。素材工程在 `/Users/rain/Documents/Unreal Projects/LastWizardFREEStylizedCa`（用户已加载，尚未读取）。
+- 用户决定（2026-11-15 接手时）：Lvl_S14_Greybox 等测试地图仅用于测试，保留不删、不改默认地图；对话选项以后做成 UMG 按钮（单独一步）；Content/Fab、Content/Iceland_Environment 是用户本机素材，永不入库（已加入 .gitignore）。
 - 待用户决定：
-  0. 是否把默认地图改为 `Lvl_S14_Greybox`（目前需手动打开）
   1. 是否删除测试类 `LokiCompileTest`
-  2. 是否导入 Last Wizard FREE 素材（尚未导入，也未登记 `Docs/04_ASSET_LICENSES.md`）
-  3. 对话选项是否要做成 UMG 按钮
+  2. Last Wizard 许可核对（Fab 页面）
 - 待解决/审查意见：无
-- 路线记录（C++ / MCP 决策）：S00–S14 及调试可视化全部是 MCP + 蓝图（S13/S14 判断为 MCP：Sequencer/摄像机/关卡内容）；尚无正式 C++ 玩法代码（仅测试类）
+- 路线记录：S00–S15 全为 MCP + 蓝图；换墙地板判断为 MCP（关卡摆放/材质/导航）；尚无正式 C++ 玩法代码

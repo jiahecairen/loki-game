@@ -8,3 +8,7 @@ Saved/
 .DS_Store
 _Trial_EngineWire/
 Docs/_backup_pre_enginewire/
+
+# 用户自有素材（Fab / Iceland），只在本机使用，不入库
+Content/Fab/
+Content/Iceland_Environment/
