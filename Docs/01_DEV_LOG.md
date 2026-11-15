@@ -178,3 +178,27 @@
 - MCP 编译结果：蓝图已编译并保存，`compilerStatus=UpToDate`，0 个编译错误。MCP 提示一条既有的 `DecoyAttract`/`bChasing` 跨 Delay 读取警告，本次没有改动该逻辑。
 - 用户验收：用户确认可以合并到 main（2026-11-15）。Windows 未验证。
 - 状态：S11 返工通过；本提交将改动从 `codex` 合入 `main`。S12 暂停，等待用户后续指示。
+
+### 交接记录 — 2026-11-15
+- 用户额度用尽，后续由 Codex 接手。已新增 `Docs/05_HANDOFF.md`（交接说明）与根目录 `AGENTS.md`，并更新 `CLAUDE.md` 的 MCP 现状与当前进度。
+- 用户对 S11 的最终验收反馈：守卫原先"没有倒地动作、陷入地下、追击时在 1 米外停住"，Codex 已修复（死亡碰撞配置 Ragdoll、追击接受半径 25cm、追击更新 0.15 秒），用户确认现在"自然倒地、有动作"，S11 通过。该修复由 Codex 完成并已提交（commit f5a3db1），我（Claude）未参与也未复测。
+- 本次交接只写文档，未改任何 UE 资产与配置。S12 未开始。
+
+### S12 玩家死亡/失败后的重试 — 2026-11-15
+- 设计选择（用户选）：失败=玩家有血量、守卫会打人。检查点=关卡开头，重试=重载当前关卡（场景、守卫、门全部重置；剧情标记存在 GameInstance，重载后保留）。
+- BP_ThirdPersonCharacter（仅新增节点）：变量 Health（公开，默认 100）、bPlayerDead；Event AnyDamage：若 DamageCauser==自己则忽略（防止自己的 ApplyRadialDamage 伤到自己）；若已死亡忽略；Health-=Damage，屏幕显示"Player HP: x"（Key=PlayerHP）；Health<=0 → bPlayerDead=true、DisableInput、提示"You were caught - restarting in 2s..."、Delay 2、GetCurrentLevelName(去前缀)→OpenLevel。
+- BP_Guard：变量 GuardDamage（公开，默认 34）、bAtkCD；自定义事件 GuardAttack：bAtkCD=true、ApplyDamage(TargetPawn, GuardDamage, 自己控制器, 自己)、提示"Guard attacks!"、Delay 1、bAtkCD=false。ChaseLoop 在 MoveToActor 后增加判断：距 TargetPawn<160cm 且未在攻击冷却且守卫未死亡 → 调用 GuardAttack。
+- Agent PIE 实测：①玩家按左键攻击后 Health 仍为 100（无自伤）。②玩家与守卫相距约 130cm：Health 100→66→32→-2，bPlayerDead=true，约 4.5 秒时 levelChanged（重载）。③重载后玩家 Health=100、bPlayerDead=false；Guard_01 Health=100、bDead=false，回到巡逻点并开始巡逻。
+- 已知限制：重试是整关重载，没有"中途检查点"（场景内无多个检查点）；PIE 日志有一条重载时的 "LogCrowdFollowing: Unable to find RecastNavMesh" 警告，重载后守卫巡逻正常，未见影响；守卫攻击无动画/音效；玩家无受击反馈（仅血量文字）；死亡无倒地动画；玩家的隐身/残影状态在重载时自然重置；守卫之间的状态与门状态也会重置；GameInstance 的 StoryFlag 保留（重载后仍为上次的值，是否应该重置待设计）。Windows 未验证。
+
+### C++ 热编译实测（Mac，UE 5.8.4）— 2026-11-15
+- 目的：验证"用 C++ 而不是 MCP 蓝图写逻辑"在本机的迭代速度（教程说法：要退出重编译 vs 改动快、省 token）。
+- 新增（仅测试用，可删）：`Source/LOKI/LokiCompileTest.h/.cpp`（UActorComponent，含 `GetTestValue()` UFUNCTION）。LOKI 模块此前从未编译过（无 Binaries），本次首次生成 `Binaries/Mac/libUnrealEditor-LOKI.dylib`。
+- 结果（编辑器全程开着，没有退出）：
+  1. MCP `system_control.create_cpp_class`：首次编译 + 热加载约 35 秒，成功（日志 `LogHotReload: Recompiling module LOKI...`）。
+  2. 手改文件后，编辑器**不会自动发现**；`LiveCoding`/`LiveCoding.Compile` 控制台命令在本机**不存在**（Mac 上没有 Live Coding，用的是经典 Hot Reload）。
+  3. 控制台 `Module Recompile LOKI`（MCP `system_control.console_command` 可执行）：改函数体 + 重新加载约 8 秒；新增 UFUNCTION 后类的 functionCount 28→29，说明新函数已加载进运行中的编辑器，无需重启。
+  4. 命令行外部构建 `Engine/Build/BatchFiles/Mac/Build.sh LOKIEditor Mac Development -Project="<绝对路径>/LOKI.uproject"`：增量约 9.6 秒，编辑器开着也能成功，但编辑器不会因此自动加载（需再执行 `Module Reload LOKI`）。
+- 注意：MCP 的 `system_control.run_build kind=ubt` 把工程路径拼成相对路径，会报 "Unable to find project file"，目前不可用，需用命令行或 `Module Recompile`。`create_cpp_class` 不能用子文件夹（模块没有 Public/Private）。构建时 UBT 会清理 EngineWire 的 UnrealEditor.modules 并重新生成，实测文件仍在。
+- 未验证：①新增/修改头文件（改 UPROPERTY、类布局）在已有蓝图实例上的热重载稳定性（Hot Reload 对布局变化可能要重启编辑器）；②Windows（Live Coding 在 Windows 可用，需到 Windows 实测）；③从蓝图迁移到 C++ 的实际 token 节省（本次未做迁移，仅测编译链路）。
+- 结论：Mac 上"改 C++ → 控制台 Module Recompile → 立刻在编辑器里生效"可行，日常约 8–10 秒，不必退出编辑器；教程所说"必须退出重编译"在本机不成立，但"没有 Live Coding"成立。

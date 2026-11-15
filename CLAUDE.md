@@ -5,7 +5,7 @@
 
 ## 项目事实
 - 引擎 UE 5.8.4（/Users/Shared/Epic Games/UE_5.8），开发机 Mac M4 Max，将来发布 Windows x64。
-- 工程：/Users/rain/DevGame/Loki/LOKI.uproject（Blueprint 版第三人称模板，已通过 S00–S02）。
+- 工程：/Users/rain/DevGame/Loki/LOKI.uproject（Blueprint 版第三人称模板，已通过 S00–S11）。
 - 目标：2 个月内可玩的 10–15 分钟 Demo。先用灰盒 + UE 模板人偶，S15 之后再换免费素材，授权记入 Docs/04_ASSET_LICENSES.md。
 - 剧情：详见项目总设计附录 A。**不要把"待定"写成"已定"，不要自行编造剧情。**
 - **总设计文件（必读）：`Docs/LOKI_UE5_Claude_MCP_项目总设计与分步验收_v1.0.md`**，含 10 条规则、S00–S15 路线图（S03 = 第三人称移动/镜头基线）、Windows 风险清单、附录 A 剧情记录。开始任何步骤前先读它；剧情部分只读不改，只能提案。
@@ -19,11 +19,16 @@
 6. MCP 插件必须仅编辑器使用（TargetAllowList=Editor），不得成为运行时依赖。
 7. 路径用英文；Git 提交需用户批准；.gitignore 排除 Saved/、Intermediate/、DerivedDataCache/、Binaries/。
 
-## MCP 现状（2026-11-15）
-- 官方 Unreal MCP：LOKI 已配置端口 8765、自动启动。
-- 社区 EngineWire（ChiR24/Unreal_mcp）隔离试用：_Trial_EngineWire/（临时工程），编译通过，建关卡/保存/放物体均成功，0 步人工操作。是否迁移到 LOKI 待用户决定。
-- 两者都用 8765，**不能同时打开**。
-- Code 会话的 MCP 由工作目录下 .mcp.json 提供（server 名 unreal，http://127.0.0.1:8765/mcp）。LOKI 根目录目前没有 .mcp.json。
+## MCP 现状（2026-11-15 更新）
+- 已迁移到社区 EngineWire（ChiR24/Unreal_mcp）：`Plugins/EngineWire`（仅 Editor）。官方 Unreal MCP 的 bAutoStartServer 已设为 False。**不能同时用 8765**。
+- MCP 端点：http://127.0.0.1:8765/mcp（server 名 unreal，令牌由 Tools/mcp_headers.sh 提供）。Claude Code 用根目录 `.mcp.json`，Codex 用 `.codex/config.toml`。
+- 工具用法与踩坑见 `Docs/05_HANDOFF.md` 第 4 节。
 
-## 当前进度
-S00、S01、S02 通过；MCP-TRIAL 进行中；下一步：S03（并检查 find_actors 为何找不到 ThirdPersonCharacter）。
+## 当前进度（2026-11-15）
+S00–S12 全部用户验收通过（S08/S10/S11 经返工）。下一步 S13（用户尚未下令）。
+交接说明（资产清单、键位、已知问题、MCP 经验）：`Docs/05_HANDOFF.md`。Codex 请先读 `AGENTS.md`。
+
+## 多 Agent 协作（Claude Code ↔ Codex，2026-11-15 起）
+- **每个新会话先运行 `bash Tools/session_start.sh`，并读 `Docs/STATE.md`、`Docs/05_HANDOFF.md`、`Docs/06_CROSS_AGENT_WORKFLOW.md`。** 同一时刻只让一个 Agent 动编辑器/资产。
+- **每个小步骤结束必须：** 停 PIE、保存、更新 `01_DEV_LOG.md`、`02_ACCEPTANCE_LOG.md`，并**覆盖更新 `Docs/STATE.md`**。
+- **每步开始前先判断路线（C++ / MCP / 混合），在回复里写出理由**；规则见 `Docs/06_CROSS_AGENT_WORKFLOW.md` 第 D 节。优先级：质量 > 速度 > token。

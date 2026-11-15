@@ -3,6 +3,16 @@
 	"EngineAssociation": "5.8",
 	"Category": "",
 	"Description": "LOKI - UE5 narrative adventure (S02 grey-box base)",
+	"Modules": [
+		{
+			"Name": "LOKI",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+		}
+	],
 	"Plugins": [
 		{
 			"Name": "ModelingToolsEditorMode",
@@ -42,13 +52,6 @@
 			"TargetAllowList": [
 				"Editor"
 			]
-		}
-	],
-	"Modules": [
-		{
-			"Name": "LOKI",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
 		}
 	]
 }
