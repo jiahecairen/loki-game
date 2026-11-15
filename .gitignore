@@ -1,0 +1,10 @@
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+.vscode/
+.idea/
+*.xcworkspace
+.DS_Store
+_Trial_EngineWire/
+Docs/_backup_pre_enginewire/
