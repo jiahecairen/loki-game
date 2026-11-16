@@ -293,3 +293,16 @@
 - ③新增调试显示：组件 `SetDebugDisplay(bool)`，开启时每帧屏幕显示 "[角色名] HP x/100 | Invulnerable: YES/NO"（无敌黄字，否则绿字；只在开启时 Tick）。BP_ThirdPersonCharacter：F1 切换 bShowDebug 后同步调用；BeginPlay 按 GameInstance.bShowDebug 同步（重载后保持）。复测：F1 后 IsComponentTickEnabled=true；走进开场镜头 bInvulnerable=true。截图工具抓不到屏幕调试文字，文字外观需用户肉眼确认。
 - 热重载问题：第二次改头文件后蓝图连线报"Loki Health 与 Loki Health 不兼容"（新旧类并存）。处理：用户关闭编辑器 → 命令行 Build.sh 编译（Succeeded）→ 重开编辑器 → 再接线成功。结论：改 C++ 头文件（新增函数/成员）后需要接蓝图时，先重启编辑器。
 - 发现：PIE 里按 F1 同时会触发 UE 自带的"线框模式"（F1 线框 / F3 恢复光照），这是编辑器调试快捷键，打包后的游戏不会有。S14 选了 F1 做调试开关，暂未改键。
+
+### 设计对照检查与用户决定 — 2026-11-16（Claude Code，Opus 5.5）
+- 对照总设计文档做了只读检查（未改资产）。发现：STATE 里的"室外断崖开场（主角被绑在石头上）"与设计文档冲突（文档：序章从牢房开始；绑石/蛇毒是巴德尔死后的原典刑罚）。
+- 用户决定：
+  1. 序章开场暂定按设计文档的**牢房**方案，忽略断崖方案（`Lvl_S16_Cliff` 计划作废）。
+  2. 同伴、字幕/对话 UMG 尚未做；分段检查点是未来功能。
+  3. Git LFS：批准给**新增**资产启用（不改历史）。本机未安装 git-lfs，本次未启用，留给下一位 Agent（安装命令需用户同意）。
+  4. 本地未推送的提交：推送到 GitHub（本次已推送）。
+  5. Last Wizard FREE 许可：用户确认没有禁止商用的条款。
+  6. S15 换墙地板：确认通过，测试场景不再打磨。
+  7. F1 与编辑器线框快捷键冲突：忽略。守卫 DecoyAttract 旧警告：C2 顺带解决。Windows 验证：暂时忽略。启动日志杂项、默认地图、LokiCompileTest：忽略。
+  8. 路线：A 段（推送、LFS、确认验收）本次处理；B 段 C2→C5（守卫 AI 迁 C++、分段检查点、同伴基础、对话/字幕 UMG）后续做；C/D 段（序章灰盒、写实资产、Windows、正式 Demo）以后再说。
+- 工作区里 `Lvl_S14_Greybox.umap`、`SEQ_S14_Intro.uasset` 是用户关闭编辑器时保存的自己的改动，按用户"只提交必要的"未提交。

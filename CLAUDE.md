@@ -24,8 +24,8 @@
 - MCP 端点：http://127.0.0.1:8765/mcp（server 名 unreal，令牌由 Tools/mcp_headers.sh 提供）。Claude Code 用根目录 `.mcp.json`，Codex 用 `.codex/config.toml`。
 - 工具用法与踩坑见 `Docs/05_HANDOFF.md` 第 4 节。
 
-## 当前进度（2026-11-15）
-S00–S12 全部用户验收通过（S08/S10/S11 经返工）。下一步 S13（用户尚未下令）。
+## 当前进度（2026-11-16）
+S00–S15 与 C1（C++ 血量组件）全部用户验收通过。序章按设计文档牢房方案（断崖方案作废）。下一步：安装 git-lfs（需用户同意）→ C2 守卫 AI 迁 C++。详见 `Docs/STATE.md`。
 交接说明（资产清单、键位、已知问题、MCP 经验）：`Docs/05_HANDOFF.md`。Codex 请先读 `AGENTS.md`。
 
 ## 多 Agent 协作（Claude Code ↔ Codex，2026-11-15 起）

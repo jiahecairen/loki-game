@@ -9,6 +9,9 @@
 | Last Wizard FREE（骑士部分，同一素材包） | 同上 | 2026-11-15 | `/Game/LastWizard/Characters/Knight/**`（SK_Knight、SKEL_Knight、PHYS_Knight、4 个动画 A_Knight_Idle/Walk/Attack/Death、3 个材质、9 张贴图，约 46MB） | S15：替换守卫 `BP_Guard` 的外观与动画 | **待核对**（同上） | **待核对** | 骨架为包内自带自定义骨架（骨骼命名类似 UE5 Mannequin），无 Run/Jump。 |
 | Last Wizard FREE（地板与墙，同一素材包） | 同上（许可仍待用户在 Fab 页面核对） | 2026-11-15 | `/Game/LastWizard/ModularInterior/Floor/**`（SM_Floor、MI_Floor_Rocks_A 及贴图）、`/Game/LastWizard/ModularInterior/Wall/**`（SM_Wall_Bricks、MI_Wall_Bricks_Plain 等）；两个材质实例已设 two_sided 覆盖 | 关卡 Lvl_S14_Greybox：70 块墙面 + 27 块地板仅作视觉（无碰撞），原灰盒方块隐藏但保留碰撞 |
 
+## 许可核对记录
+- 2026-11-16：用户确认 Last Wizard FREE（门、骑士、墙、地板）没有禁止商用的条款。上表中"待核对"按此更新为"用户已确认可商用（Fab 页面，用户核对）"。
+
 ## 备注
 - 本机 Fab 缓存里还看到另外几个 listing：`Electric_Dreams_Env`、`Game_Animation_Sample`、`Valley_of_the_Ancient`（均未导入，只是缓存目录名）。使用前同样需要用户确认来源与许可，并在此登记。
 - 保持 `/Game/LastWizard/...` 原路径不变（包内资产以绝对路径互相引用，搬家会断引用）。
